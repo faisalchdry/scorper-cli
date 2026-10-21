@@ -1,6 +1,6 @@
 # scorper
 
-Scorper Connect — post and schedule to your social accounts straight from
+Scorper Connect, post and schedule to your social accounts straight from
 your AI agent (Claude Code, Codex, Cursor and more).
 
 ```

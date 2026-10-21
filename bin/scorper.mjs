@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// scorper — Scorper Connect inside any AI agent. Post and schedule to your
+// scorper, Scorper Connect inside any AI agent. Post and schedule to your
 // connected socials from Claude Code, Codex, Cursor and friends.
 import { parseArgs } from 'node:util';
 import { createReadStream, statSync } from 'node:fs';
@@ -61,7 +61,7 @@ async function pollUntil(until, { label, intervalMs = 4000, timeoutMs = 10 * 60 
 
 function accountsLine(s) {
   if (!s.accounts.length) {
-    return 'No socials connected yet — connect them at ' + API_BASE + '/connect and every one becomes postable from here.';
+    return 'No socials connected yet, connect them at ' + API_BASE + '/connect and every one becomes postable from here.';
   }
   return 'Connected: ' + s.accounts.map((a) => `${a.handle} (${a.platform}${a.workspace !== 'default' ? `, ${a.workspace}` : ''})`).join(', ');
 }
@@ -84,15 +84,15 @@ async function cmdInit() {
       out(`Signed in as ${s.email}. ${accountsLine(s)}`);
       return;
     } catch {
-      out('Signed in, but the saved key no longer works — run: scorper login');
+      out('Signed in, but the saved key no longer works, run: scorper login');
       return;
     }
   }
   if (process.stdin.isTTY && process.stdout.isTTY) {
-    out('\nNext: scorper login — it opens your browser so you can approve this terminal.');
+    out('\nNext: scorper login, it opens your browser so you can approve this terminal.');
   } else {
     // Launched by an agent: hand the conversation to it.
-    out('AGENT NOTE: Scorper Connect is installed. Now get the person signed in, following the scorper skill, and keep it WARM and conversational — wave emoji hello, excited to have them, short messages, founder-welcoming energy, never formal. Their Scorper account already knows their name and email, so NEVER ask for either — just run scorper login (it opens their browser to approve this terminal) and greet them by name from the status that follows. If status says studio=false, the skill covers the friendly Studio step.');
+    out('AGENT NOTE: Scorper Connect is installed. Now get the person signed in, following the scorper skill, and keep it WARM and conversational, wave emoji hello, excited to have them, short messages, founder-welcoming energy, never formal. Their Scorper account already knows their name and email, so NEVER ask for either, just run scorper login (it opens their browser to approve this terminal) and greet them by name from the status that follows. If status says studio=false, the skill covers the friendly Studio step.');
   }
 }
 
@@ -105,7 +105,7 @@ async function cmdLogin() {
     body: { agent: agents[0] || 'terminal' },
   });
   const opened = openUrl(start.url);
-  out(opened ? 'I\'ve opened Scorper in your browser — log in there and approve this terminal.' : `Open this in your browser to approve this terminal: ${start.url}`);
+  out(opened ? 'I\'ve opened Scorper in your browser, log in there and approve this terminal.' : `Open this in your browser to approve this terminal: ${start.url}`);
   out('Waiting for the approval…');
   const token = await pollUntil(async () => {
     const res = await api('/api/cli/link-poll', { method: 'POST', auth: false, body: { code: start.code } });
@@ -120,27 +120,27 @@ async function cmdLogin() {
   out(`\nSigned in as ${s.email}${s.name ? ` (${s.name})` : ''}.`);
   out(s.studio
     ? accountsLine(s)
-    : 'Scorper Connect needs the Studio plan — next: scorper pay (it opens the upgrade page and verifies for you).');
+    : 'Scorper Connect needs the Studio plan, next: scorper pay (it opens the upgrade page and verifies for you).');
 }
 
 async function cmdPay() {
   const res = await api('/api/cli/checkout', { method: 'POST' });
-  if (res.alreadyStudio) { out('You\'re already on Studio — Connect is unlocked. Nothing to pay.'); return; }
+  if (res.alreadyStudio) { out('You\'re already on Studio, Connect is unlocked. Nothing to pay.'); return; }
   const opened = openUrl(res.url);
-  out(opened ? 'Upgrade page opened in your browser — pick monthly or yearly there.' : `Open this in your browser: ${res.url}`);
+  out(opened ? 'Upgrade page opened in your browser, pick monthly or yearly there.' : `Open this in your browser: ${res.url}`);
   if (flags['no-wait']) return;
   out('Waiting for the upgrade to land (I check every few seconds)…');
   await pollUntil(async () => {
     const s = await fetchStatus();
     return s.studio ? s : null;
   }, { label: 'Studio upgrade', intervalMs: (res.pollSeconds || 5) * 1000 });
-  out('\nStudio verified. Connect is unlocked — you can post from here now.');
+  out('\nStudio verified. Connect is unlocked, you can post from here now.');
 }
 
 async function cmdConnect() {
   const before = await fetchStatus();
   const opened = openUrl(`${API_BASE}/connect`);
-  out(opened ? 'Scorper Connect opened in your browser — connect a platform there.' : `Open this in your browser: ${API_BASE}/connect`);
+  out(opened ? 'Scorper Connect opened in your browser, connect a platform there.' : `Open this in your browser: ${API_BASE}/connect`);
   if (flags['no-wait']) return;
   out('Waiting for a new connection…');
   const after = await pollUntil(async () => {
@@ -190,7 +190,7 @@ async function cmdUpload() {
   });
 
   // Mint the client-upload token ourselves (bearer-authenticated), then push
-  // the bytes straight to Vercel Blob — they never pass through Scorper.
+  // the bytes straight to Vercel Blob, they never pass through Scorper.
   const mintRes = await fetch(`${API_BASE}/api/schedule/upload-media`, {
     method: 'POST',
     headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
@@ -256,7 +256,7 @@ function cmdDoctor() {
   out('If skills look stale, run: npx scorper@latest init');
 }
 
-const HELP = `scorper ${packageVersion()} — Scorper Connect inside your AI agent (${API_BASE})
+const HELP = `scorper ${packageVersion()}: Scorper Connect inside your AI agent (${API_BASE})
 
   npx scorper@latest init    install skills + hooks into your agents
   scorper login              approve this terminal in your browser (no passwords here)
