@@ -3,10 +3,12 @@
 // connected socials from Claude Code, Codex, Cursor and friends.
 import { parseArgs } from 'node:util';
 import { createReadStream, statSync } from 'node:fs';
-import { basename, resolve } from 'node:path';
+import { basename, resolve, join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { spawnSync } from 'node:child_process';
 import { api, API_BASE } from '../lib/api.mjs';
 import { readConfig, writeConfig, ensureInstallId } from '../lib/config.mjs';
-import { installAll, packageVersion } from '../lib/install.mjs';
+import { installAll, installCliDeps, packageVersion } from '../lib/install.mjs';
 import { uninstallAll } from '../lib/uninstall.mjs';
 import { detectAgents } from '../lib/detect.mjs';
 import { openUrl } from '../lib/open.mjs';
@@ -73,6 +75,9 @@ async function cmdInit() {
   const found = result.agents.map((a) => a.name).join(', ') || 'none detected';
   out(`Scorper Connect installed. Agents found: ${found}.`);
   out(`Skills + hooks are in place. Version ${packageVersion()}.`);
+  if (result.depsOk === false) {
+    out('One optional piece (upload support) could not finish installing, it will finish itself on your first upload.');
+  }
   if (result.agents.some((a) => a.id === 'codex')) {
     out('Codex users: open Codex and run /hooks once to switch Scorper\'s hooks on.');
   }
@@ -214,7 +219,32 @@ async function cmdUpload() {
     return;
   }
 
-  const { put } = await import('@vercel/blob');
+  // Older installs (0.1.1) copied the CLI without its dependencies. Install
+  // them in place once, then re-run this same command in a fresh process so
+  // the import resolves cleanly.
+  let put;
+  try {
+    ({ put } = await import('@vercel/blob'));
+  } catch {
+    if (process.env.SCORPER_DEPS_RETRY) {
+      out('Uploads need a quick repair that did not take. Run: npx scorper@latest init');
+      process.exitCode = 1;
+      return;
+    }
+    out('One moment, finishing the upload setup on this machine…');
+    const cliRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
+    if (!installCliDeps(cliRoot)) {
+      out('Could not finish the setup. Run: npx scorper@latest init');
+      process.exitCode = 1;
+      return;
+    }
+    const r = spawnSync(process.execPath, process.argv.slice(1), {
+      stdio: 'inherit',
+      env: { ...process.env, SCORPER_DEPS_RETRY: '1' },
+    });
+    process.exitCode = r.status ?? 0;
+    return;
+  }
   out(`Uploading ${name} (${(size / 1024 / 1024).toFixed(1)} MB)…`);
   const blob = await put(`connect-cli/${name}`, createReadStream(path), {
     access: 'public',
