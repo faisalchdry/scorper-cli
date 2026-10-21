@@ -105,7 +105,8 @@ async function cmdLogin() {
     body: { agent: agents[0] || 'terminal' },
   });
   const opened = openUrl(start.url);
-  out(opened ? 'I\'ve opened Scorper in your browser, log in there and approve this terminal.' : `Open this in your browser to approve this terminal: ${start.url}`);
+  out(opened ? 'I\'ve opened Scorper in your browser, log in there and approve this terminal.' : 'Open this link in your browser to approve this terminal:');
+  out(`  ${start.url}`);
   out('Waiting for the approval…');
   const token = await pollUntil(async () => {
     const res = await api('/api/cli/link-poll', { method: 'POST', auth: false, body: { code: start.code } });
@@ -127,7 +128,8 @@ async function cmdPay() {
   const res = await api('/api/cli/checkout', { method: 'POST' });
   if (res.alreadyStudio) { out('You\'re already on Studio, Connect is unlocked. Nothing to pay.'); return; }
   const opened = openUrl(res.url);
-  out(opened ? 'Upgrade page opened in your browser, pick monthly or yearly there.' : `Open this in your browser: ${res.url}`);
+  out(opened ? 'Upgrade page opened in your browser, pick monthly or yearly there.' : 'Open this link in your browser:');
+  out(`  ${res.url}`);
   if (flags['no-wait']) return;
   out('Waiting for the upgrade to land (I check every few seconds)…');
   await pollUntil(async () => {
@@ -140,7 +142,8 @@ async function cmdPay() {
 async function cmdConnect() {
   const before = await fetchStatus();
   const opened = openUrl(`${API_BASE}/connect`);
-  out(opened ? 'Scorper Connect opened in your browser, connect a platform there.' : `Open this in your browser: ${API_BASE}/connect`);
+  out(opened ? 'Scorper Connect opened in your browser, connect a platform there.' : 'Open this link in your browser:');
+  out(`  ${API_BASE}/connect`);
   if (flags['no-wait']) return;
   out('Waiting for a new connection…');
   const after = await pollUntil(async () => {
