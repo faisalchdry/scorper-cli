@@ -1,6 +1,6 @@
 ---
 name: scorper-posting
-description: Post and schedule to the person's social accounts (Instagram, TikTok, LinkedIn, X, YouTube) through Scorper Connect. Use when they want to post something now, schedule a post, publish a local photo or video, check their content calendar, or generate a carousel and post it. Trigger words - post to instagram, schedule this, publish, put this on my socials, what's scheduled.
+description: Post and schedule to the person's social accounts (Instagram, LinkedIn, TikTok, X) through Scorper Connect. Use when they want to post something now, schedule a post, publish a local photo or video, check their content calendar, or generate a carousel and post it. Trigger words - post to instagram, schedule this, publish, put this on my socials, what's scheduled.
 ---
 
 # Posting through Scorper Connect
@@ -45,6 +45,10 @@ Useful actions (run `tool` with no name for the full, current list):
 - "What's going out this week?" → calendar.
 - "Make a carousel about X and post it" → generate_carousel → show them →
   confirm → post_now.
+
+Supported platforms: Instagram, LinkedIn, TikTok and X — nothing else. If
+they ask for YouTube (or any other platform), say warmly that Scorper
+Connect doesn't cover it; never attempt it anyway.
 
 If a posting action fails, read the error to them in plain words — the
 usual causes are a platform that isn't connected (fix in the Scorper

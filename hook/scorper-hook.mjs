@@ -35,6 +35,7 @@ try {
     const routes = [
       // Posting intent: a platform name, or post/schedule/publish near social
       // nouns. The skill is the one that knows how to actually do it.
+      // youtube stays as a trigger so the skill can explain it's not covered.
       [/\b(instagram|tiktok|linkedin|youtube|socials?|reel|carousel)\b/, 'scorper-posting'],
       [/\b(post|schedule|publish)\b.*\b(ig|insta|x|twitter|video|photo|image|clip)\b/, 'scorper-posting'],
       [/\b(dashboard|control panel|admin panel|scheduler)\b/, 'scorper-dashboard'],

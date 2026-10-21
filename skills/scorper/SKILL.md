@@ -5,8 +5,8 @@ description: Scorper Connect account setup and management. Use when the person m
 
 # Scorper Connect
 
-Scorper holds the person's social connections (Instagram, TikTok, LinkedIn,
-X, YouTube). Once their terminal is linked, they can post, schedule, and
+Scorper holds the person's social connections (Instagram, LinkedIn, TikTok
+and X — those four, no others). Once their terminal is linked, they can post, schedule, and
 build their own tools on top — all from here. The CLI is installed at:
 {{SCORPER_CLI}}
 
