@@ -35,12 +35,28 @@ Useful actions (run `tool` with no name for the full, current list):
    png, webp, mp4, mov, up to 300 MB.
 4. Times: ask their timezone once if it's ambiguous, send ISO timestamps.
 5. Captions in THEIR voice. Short beats clever. Never pad with hashtags they
-   didn't ask for.
+   didn't ask for. When drafting a caption for them, propose a few options
+   (3 to 5) and let them pick.
+6. Multi-platform caption flow: draft ONE caption first (assume they want
+   the same one everywhere), then ask: "Want this caption on every platform
+   you're posting to, or a platform-specific caption for any of them?" If
+   they go platform-specific, suggest a tailored caption per platform, or
+   ask if they have their own. Then ONE call does it all: `caption` is the
+   default, the `captions` parameter overrides per platform, e.g.
+   `{"caption": "...", "captions": {"tiktok": "..."}}`. Never split one
+   post into separate calls just for different captions.
+7. AI-made content: if the media is AI-generated, pass `aiGenerated: true`.
+   On TikTok videos that applies TikTok's permanent AI-generated label
+   (required for compliance, tell them it can't be removed once posted).
+   Instagram has no per-post API label, the AI disclosure there is an
+   account-level switch in the Instagram app, so remind accounts that
+   mainly post AI content to turn it on themselves.
 
 ## Shapes this covers
 
 - "Post the video on my desktop called launch.mp4 to Instagram and TikTok
-  right now" → upload → confirm caption → post_now per platform.
+  right now" → upload → caption flow (same everywhere or per platform?) →
+  ONE post_now with both platforms (per-platform text via `captions`).
 - "Schedule this for 6pm tomorrow on LinkedIn" → confirm → schedule_post.
 - "What's going out this week?" → calendar.
 - "Make a carousel about X and post it" → generate_carousel → show them →
