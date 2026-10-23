@@ -140,7 +140,7 @@ async function finishLogin(token) {
 function afterLoginLines(s, isNew) {
   out(`\n${isNew ? 'Account created' : 'Signed in'}: ${s.email}${s.name ? ` (${s.name})` : ''}.`);
   if (unlocked(s)) {
-    out(s.status === 'trialing' && s.trial_end ? `Plan: ${s.tier}, free trial until ${String(s.trial_end).slice(0, 10)}. Connect is unlocked.` : `Plan: ${s.tier}. Connect is unlocked.`);
+    out(s.status === 'trialing' && s.trial_end ? `Plan: ${s.tier}, free trial until ${String(s.trial_end).slice(0, 10)}. Connect is on.` : `Plan: ${s.tier}. Connect is on.`);
     out(accountsLine(s));
   } else {
     out('Posting from here comes with Max or Studio. Plans:');
@@ -218,14 +218,14 @@ async function cmdPay() {
   if (interval !== 'month' && interval !== 'year') { out('Interval: month or year.'); process.exitCode = 1; return; }
   if (!plan) {
     const s = await fetchStatus();
-    if (unlocked(s)) { out(`You're on ${s.tier}, Connect is unlocked. Nothing to pay.`); return; }
+    if (unlocked(s)) { out(`You're on ${s.tier}, Connect is already on. Nothing to pay.`); return; }
     out('Pick a plan first:');
     out(plansLine(s));
     out('Then: scorper pay --plan max|studio --interval month|year');
     return;
   }
   const res = await api('/api/cli/checkout', { method: 'POST', body: { plan, interval } });
-  if (res.alreadyEntitled || res.alreadyStudio) { out(`You already have ${plan === 'studio' ? 'Studio' : 'that'}, Connect is unlocked. Nothing to pay.`); return; }
+  if (res.alreadyEntitled || res.alreadyStudio) { out(`You already have ${plan === 'studio' ? 'Studio' : 'that'}, Connect is already on. Nothing to pay.`); return; }
   const opened = openUrl(res.url);
   if (res.dashboard) {
     out(opened ? 'Opened your Scorper dashboard to switch plans (you already pay, so it is prorated there). If nothing opened, use this link:' : 'Open this link to switch plans in your Scorper dashboard:');
@@ -242,7 +242,7 @@ async function cmdPay() {
     if (plan === 'studio' && st.tier !== 'studio' && !st.is_admin) return null;
     return st;
   }, { label: 'payment', intervalMs: (res.pollSeconds || 5) * 1000 });
-  out(`\nVerified, you're on ${s.tier}${s.status === 'trialing' ? ' (free trial)' : ''}. Connect is unlocked, you can post from here now.`);
+  out(`\nVerified, you're on ${s.tier}${s.status === 'trialing' ? ' (free trial)' : ''}. Connect is on, you can post from here now.`);
 }
 
 async function cmdConnectDm() {
@@ -290,7 +290,7 @@ async function cmdStatus() {
   const s = await fetchStatus();
   if (flags.json) { out(JSON.stringify({ ...s, version: packageVersion() })); return; }
   out(`Signed in: ${s.email}${s.name ? ` (${s.name})` : ''}`);
-  out(`Plan: ${planName(s)}${s.status === 'trialing' ? ' (free trial)' : ''}${unlocked(s) ? ' · Connect unlocked' : ' · Connect comes with Max or Studio (scorper pay)'}`);
+  out(`Plan: ${planName(s)}${s.status === 'trialing' ? ' (free trial)' : ''}${unlocked(s) ? ' · Connect on' : ' · Connect comes with Max or Studio (scorper pay)'}`);
   const cfg = readConfig();
   if (cfg.default_account) out(`Default brand on this machine: ${cfg.default_account}`);
   out(accountsLine(s));

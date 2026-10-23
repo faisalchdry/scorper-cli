@@ -41,7 +41,7 @@ The beats, with example lines (use these or your own words in this spirit):
      then rerun with `--name "<name>"`.
    - Wrong or expired code: say so plainly, offer to send a new one (rerun
      step 2, there is a 30 second wait between codes).
-4. Plan (only if Connect isn't unlocked, the login output says so and lists
+4. Plan (only if Connect isn't on yet, the login output says so and lists
    the plans with prices, read them from there, never from memory). Present
    both, short and clear, monthly first:
    - Max: 1 brand account, every social, carousel and video tools. Monthly
@@ -60,7 +60,7 @@ The beats, with example lines (use these or your own words in this spirit):
    connection). If the browser asks them to log in to Scorper, "Email me a
    code" with the same email gets them in, no password needed. Repeat for
    more platforms if they want.
-6. Instagram connected? Offer the DM automations, once, honestly: "One more
+6. Instagram connected? Offer the DM automations once, plainly: "One more
    thing you get with your plan: comment-to-DM automations, like ManyChat.
    Someone comments a word like GUIDE on your post and they get a DM with
    your link. It's a separate quick Instagram approval, want to set it up
