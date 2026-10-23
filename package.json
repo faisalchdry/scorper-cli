@@ -1,7 +1,7 @@
 {
   "name": "scorper",
-  "version": "0.1.3",
-  "description": "Scorper Connect — post and schedule to your social accounts straight from your AI agent (Claude Code, Codex, Cursor and more).",
+  "version": "0.2.0",
+  "description": "Post directly to your socials from Claude Code, Codex, Cursor and more: Instagram, TikTok, LinkedIn, X, YouTube, plus Instagram comment-to-DM automations.",
   "type": "module",
   "bin": {
     "scorper": "bin/scorper.mjs"

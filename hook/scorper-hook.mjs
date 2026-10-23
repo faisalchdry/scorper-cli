@@ -18,7 +18,7 @@ try {
   const signedIn = Boolean(config.token);
 
   if (event === 'session' && !signedIn) {
-    lines.push('Scorper Connect status: installed, not signed in yet. The scorper skill covers the quick browser sign-in (scorper login).');
+    lines.push('Scorper Connect status: installed, not signed in yet. The scorper skill covers the quick email-code sign-in (scorper login --email).');
   }
 
   if (event === 'session' && config.news && config.news.id && config.news.id !== config.announced_news_id) {
@@ -35,9 +35,10 @@ try {
     const routes = [
       // Posting intent: a platform name, or post/schedule/publish near social
       // nouns. The skill is the one that knows how to actually do it.
-      // youtube stays as a trigger so the skill can explain it's not covered.
       [/\b(instagram|tiktok|linkedin|youtube|socials?|reel|carousel)\b/, 'scorper-posting'],
       [/\b(post|schedule|publish)\b.*\b(ig|insta|x|twitter|video|photo|image|clip)\b/, 'scorper-posting'],
+      // Comment-to-DM automations (ManyChat-style) live in the posting skill.
+      [/\b(dms?|auto-?dm|manychat|comment to dm|keyword reply|dm automation)\b/, 'scorper-posting'],
       [/\b(dashboard|control panel|admin panel|scheduler)\b/, 'scorper-dashboard'],
       [/\bscorper\b/, 'scorper'],
     ];
