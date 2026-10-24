@@ -264,12 +264,44 @@ async function cmdConnectDm() {
   out(`\n${done}`);
 }
 
+const PLATFORM_ALIASES = {
+  instagram: 'instagram', ig: 'instagram', insta: 'instagram',
+  linkedin: 'linkedin', li: 'linkedin',
+  tiktok: 'tiktok', tt: 'tiktok',
+  x: 'twitter', twitter: 'twitter',
+  youtube: 'youtube', yt: 'youtube',
+};
+const PLATFORM_LABELS = { instagram: 'Instagram', linkedin: 'LinkedIn', tiktok: 'TikTok', twitter: 'X', youtube: 'YouTube' };
+
 async function cmdConnect() {
   if (flags.dm) return cmdConnectDm();
   const before = await fetchStatus();
-  const opened = openUrl(`${API_BASE}/connect`);
-  out(opened ? 'Scorper Connect opened in your browser, connect a platform there. If nothing opened, use this link:' : 'Open this link in your browser:');
-  out(`  ${API_BASE}/connect`);
+  const platform = PLATFORM_ALIASES[String(positionals[0] || '').toLowerCase()] || null;
+  if (platform) {
+    // Open the platform's Ayrshare approval DIRECTLY — terminal users are
+    // passwordless, the dashboard connect page is a login wall for them.
+    const label = PLATFORM_LABELS[platform];
+    let link;
+    try {
+      const r = await api('/api/social/connect', {
+        method: 'POST',
+        body: { platform, redirect: `${API_BASE}/cli-paid?state=connected` },
+      });
+      link = r.connectUrl;
+    } catch (e) {
+      out(`Could not create the ${label} connect link: ${e.message}`);
+      process.exitCode = 1; return;
+    }
+    const opened = openUrl(link);
+    out(opened
+      ? `Opened the ${label} approval in your browser. Log into the RIGHT ${label} account there first, then approve. If nothing opened, use this link:`
+      : `Open this link in your browser (log into the right ${label} account first):`);
+    out(`  ${link}`);
+  } else {
+    const opened = openUrl(`${API_BASE}/connect`);
+    out(opened ? 'Scorper Connect opened in your browser, connect a platform there. If nothing opened, use this link:' : 'Open this link in your browser:');
+    out(`  ${API_BASE}/connect`);
+  }
   if (flags['no-wait']) return;
   out('Waiting for a new connection…');
   const after = await pollUntil(async () => {

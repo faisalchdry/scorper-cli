@@ -56,8 +56,9 @@ The beats, with example lines (use these or your own words in this spirit):
 5. Socials. Ask which platforms they want to post to. Then: "Quick tip
    before I open it: log into the right account for each platform in your
    browser first, it connects whichever account is logged in." On ready:
-   `{{SCORPER_CLI}} connect` (opens the connect page, waits for the new
-   connection). If the browser asks them to log in to Scorper, "Email me a
+   `{{SCORPER_CLI}} connect <platform>` (e.g. `connect instagram`; opens that
+   platform's approval page directly, no Scorper login needed, and waits
+   for the connection). If a page still asks them to log in to Scorper, "Email me a
    code" with the same email gets them in, no password needed. Repeat for
    more platforms if they want.
 6. Instagram connected? Offer the DM automations once, plainly: "One more
