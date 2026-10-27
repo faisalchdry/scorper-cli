@@ -147,8 +147,18 @@ async function finishLogin(token) {
   return s;
 }
 
-function afterLoginLines(s, isNew) {
+function afterLoginLines(s, isNew, trialStarted = false) {
   out(`\n${isNew ? 'Account created' : 'Signed in'}: ${s.email}${s.name ? ` (${s.name})` : ''}.`);
+  if (trialStarted && cardless(s)) {
+    // Every new account starts a 7-day Max trial at sign-in, no card
+    // (2026-10-27). One beat for the agent: say so, and offer Studio for
+    // anyone running several brands (paid from day one, no trial).
+    const studio = Array.isArray(s.plans) ? s.plans.find((p) => p.plan === 'studio') : null;
+    out(`Free trial started: 7 days of Max, no card needed (until ${String(s.trial.ends_at).slice(0, 10)}). 1 brand account, every social. Connect is on.`);
+    out(`AGENT NOTE: tell them warmly they're on a 7-day free trial, no card needed. Then add, briefly: the trial covers one brand; if they run more than one brand (say two Instagram accounts) they need Studio${studio ? ` (${studio.monthly} or ${studio.yearly}, ${studio.summary})` : ''}, which has no free trial and bills today. Give them the choice: keep the free trial (default, go straight to connecting socials) or start Studio now with scorper pay --plan studio --interval <month|year>. Don't push it, one mention.`);
+    out(accountsLine(s));
+    return;
+  }
   if (unlocked(s)) {
     out(s.status === 'trialing' && s.trial_end ? `Plan: ${s.tier}, free trial until ${String(s.trial_end).slice(0, 10)}${cardless(s) ? ' (no card on file)' : ''}. Connect is on.` : `Plan: ${s.tier}. Connect is on.`);
     out(accountsLine(s));
@@ -218,7 +228,7 @@ async function cmdLogin() {
     name = await ask('Welcome to Scorper! Your first name: ');
     res = await verify(name);
   }
-  afterLoginLines(await finishLogin(res.token), Boolean(res.isNew));
+  afterLoginLines(await finishLogin(res.token), Boolean(res.isNew), Boolean(res.trialStarted));
 }
 
 async function cmdPay() {

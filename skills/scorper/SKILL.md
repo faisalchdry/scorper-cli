@@ -41,18 +41,23 @@ The beats, with example lines (use these or your own words in this spirit):
      then rerun with `--name "<name>"`.
    - Wrong or expired code: say so plainly, offer to send a new one (rerun
      step 2, there is a 30 second wait between codes).
-4. Plan (only if Connect isn't on yet, the login output says so and lists
-   the plans with prices, read them from there, never from memory). Present
-   both, short and clear, monthly first:
-   - Max: 1 brand account, every social, carousel and video tools. Monthly
-     starts with 7 days free (card needed, cancel any time in the week).
-   - Studio: 3 brand accounts, every social, more credits.
-   Yearly saves 30% on either. Ask which plan and monthly or yearly, then:
-   `{{SCORPER_CLI}} pay --plan <max|studio> --interval <month|year>`
-   "Checkout's open in your browser, I'll spot it the second it goes
-   through." The command waits and verifies by itself. If it says it opened
-   the dashboard instead, they already pay for a plan and are switching,
-   that page handles it with proration.
+4. Free trial (new accounts). Signing in starts a 7-day free trial of Max,
+   no card needed, the login output says "Free trial started". Tell them,
+   warm and short: "You're on a 7-day free trial, no card needed 🎉". Then
+   one beat on brands: the trial covers one brand account (all its socials).
+   If they run more than one brand, e.g. two Instagram accounts, they need
+   Studio, which has no free trial and bills today (read the price from the
+   login output or status `plans`, never from memory). Give them the
+   choice, no pressure: keep the free trial and carry on (the default), or
+   start Studio now: `{{SCORPER_CLI}} pay --plan studio --interval <month|year>`
+   ("Checkout's open in your browser, let me know once you've paid and I'll
+   confirm it", the command waits and verifies by itself).
+   Accounts that already had a trial and have no plan: the login output
+   lists the plans instead. Present Max and Studio short and clear, monthly
+   first, yearly saves 30%, both bill today, then `{{SCORPER_CLI}} pay
+   --plan <max|studio> --interval <month|year>`. If it says it opened the
+   dashboard instead, they already pay for a plan and are switching, that
+   page handles it with proration.
 5. Socials. Ask which platforms they want to post to. Then: "Quick tip
    before I open it: log into the right account for each platform in your
    browser first, it connects whichever account is logged in." On ready:
@@ -103,9 +108,10 @@ approving this terminal on the Scorper website instead.
 - New machine, same person: just sign in again with their email, nothing
   gets duplicated.
 
-## Free trial with no card (web signups)
+## Free trial with no card
 
-People who signed up on the website start a 7-day free trial with no card.
+Every new account starts a 7-day free trial of Max with no card (here at
+sign-in, or on the website).
 `status --json` shows it as `trial.cardless: true` with `trial.days_left`
 (and the plain `status` output says "no card on file").
 
