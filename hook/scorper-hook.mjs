@@ -41,6 +41,8 @@ try {
       [/\b(dms?|auto-?dm|manychat|comment to dm|keyword reply|dm automation)\b/, 'scorper-posting'],
       [/\b(dashboard|control panel|admin panel|scheduler)\b/, 'scorper-dashboard'],
       [/\bscorper\b/, 'scorper'],
+      // "subscribe" = the card-less trial's pay beat (scorper skill).
+      [/^\s*subscribe\b|\b(subscribe|add (a |my )?card|keep (using|posting))\b.*\bscorper\b/, 'scorper'],
     ];
     const matches = [...new Set(routes.filter(([p]) => p.test(text)).map(([, s]) => s))];
     if (matches.length) {

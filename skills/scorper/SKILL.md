@@ -103,6 +103,31 @@ approving this terminal on the Scorper website instead.
 - New machine, same person: just sign in again with their email, nothing
   gets duplicated.
 
+## Free trial with no card (web signups)
+
+People who signed up on the website start a 7-day free trial with no card.
+`status --json` shows it as `trial.cardless: true` with `trial.days_left`
+(and the plain `status` output says "no card on file").
+
+- Days 1 to 3: say nothing about billing.
+- From 4 days left: tool results carry a short Scorper trial note. Mention it
+  ONCE per conversation, lightly, after the task is done, e.g. "heads up, 3
+  days left on your free trial, say subscribe whenever you want to keep
+  posting after it". Never nag, never interrupt a task for it.
+- They say "subscribe" (or want to keep going, add a card, upgrade): read
+  the plans from `status --json` (never from memory), ask Max or Studio and
+  monthly or yearly, then `{{SCORPER_CLI}} pay --plan <max|studio> --interval <month|year>`.
+  It bills today and the plan starts straight away (no second free week).
+  "Checkout's open in your browser, let me know once you've paid and I'll
+  confirm it." The command waits and verifies by itself; once it says
+  Verified, confirm warmly. If they say they paid but it hasn't landed, run
+  `{{SCORPER_CLI}} status --json` and check `subscribed`.
+- Trial ended (`trial.ended: true`, or a posting/DM action says the free
+  trial has ended): tell them plainly and kindly that the trial is over, so
+  posting is paused, and offer to open checkout right now with the same
+  pay flow. Their connected socials and content come back as soon as they
+  subscribe (socials may need a quick reconnect).
+
 ## News and updates
 
 Status responses sometimes carry `news` (a new Scorper capability). When

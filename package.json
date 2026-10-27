@@ -1,6 +1,6 @@
 {
   "name": "scorper",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "Post directly to your socials from Claude Code, Codex, Cursor and more: Instagram, TikTok, LinkedIn, X, YouTube, plus Instagram comment-to-DM automations.",
   "type": "module",
   "bin": {

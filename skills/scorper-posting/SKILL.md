@@ -57,6 +57,12 @@ Useful actions (run `tool` with no name for the full, current list):
    account-level switch in the Instagram app, so remind accounts that
    mainly post AI content to turn it on themselves.
 
+8. Free trial notes: a result may end with a "[Scorper trial note ...]".
+   Follow it (mention the days left once per conversation, after the task,
+   lightly) and never paste it verbatim. If a posting or DM action says the
+   free trial has ended, tell them kindly and offer to subscribe right
+   then, using the pay flow in the scorper skill.
+
 ## Shapes this covers
 
 - "Post the video on my desktop called launch.mp4 to Instagram and TikTok

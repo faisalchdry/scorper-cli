@@ -43,6 +43,16 @@ const isTTY = () => Boolean(process.stdin.isTTY && process.stdout.isTTY);
 // older ones only `studio` (same meaning).
 const unlocked = (s) => Boolean(s.connect ?? s.studio);
 // "trial" + incomplete = signed up, no plan picked yet.
+// Card-less trial (web signups since 2026-10-27): Connect is on but nothing
+// is paid yet. `subscribed` (servers since then) separates the two; older
+// servers never send `trial`, so this stays false there.
+const cardless = (s) => Boolean(s.trial && s.trial.cardless);
+const trialLine = (s) => {
+  if (!cardless(s)) return '';
+  const d = s.trial.days_left;
+  if (d === 0) return 'Free trial ended, no card on file. Posting is paused until you subscribe: scorper pay --plan max|studio --interval month|year';
+  return `Free trial, no card on file: ${d === 1 ? 'last day today' : `${d} days left`}. To keep posting after it, subscribe: scorper pay --plan max|studio --interval month|year`;
+};
 const planName = (s) => (s.status === 'incomplete' || (s.tier === 'trial' && !unlocked(s)) ? 'no plan yet' : s.tier);
 
 async function ask(question) {
@@ -140,7 +150,7 @@ async function finishLogin(token) {
 function afterLoginLines(s, isNew) {
   out(`\n${isNew ? 'Account created' : 'Signed in'}: ${s.email}${s.name ? ` (${s.name})` : ''}.`);
   if (unlocked(s)) {
-    out(s.status === 'trialing' && s.trial_end ? `Plan: ${s.tier}, free trial until ${String(s.trial_end).slice(0, 10)}. Connect is on.` : `Plan: ${s.tier}. Connect is on.`);
+    out(s.status === 'trialing' && s.trial_end ? `Plan: ${s.tier}, free trial until ${String(s.trial_end).slice(0, 10)}${cardless(s) ? ' (no card on file)' : ''}. Connect is on.` : `Plan: ${s.tier}. Connect is on.`);
     out(accountsLine(s));
   } else {
     out('Posting from here comes with Max or Studio. Plans:');
@@ -218,7 +228,8 @@ async function cmdPay() {
   if (interval !== 'month' && interval !== 'year') { out('Interval: month or year.'); process.exitCode = 1; return; }
   if (!plan) {
     const s = await fetchStatus();
-    if (unlocked(s)) { out(`You're on ${s.tier}, Connect is already on. Nothing to pay.`); return; }
+    if (unlocked(s) && !cardless(s)) { out(`You're on ${s.tier}, Connect is already on. Nothing to pay.`); return; }
+    if (cardless(s)) out(trialLine(s));
     out('Pick a plan first:');
     out(plansLine(s));
     out('Then: scorper pay --plan max|studio --interval month|year');
@@ -234,11 +245,14 @@ async function cmdPay() {
   }
   out(`  ${res.url}`);
   if (res.trial) out('Max monthly starts with 7 days free, card required, cancel any time in the week.');
+  else out('This bills today and your plan starts straight away.');
   if (flags['no-wait']) return;
   out('Waiting for it to land (I check every few seconds)…');
   const s = await pollUntil(async () => {
     const st = await fetchStatus();
     if (!unlocked(st)) return null;
+    // Card-less trials already have Connect on: wait for the payment itself.
+    if (cardless(st) || st.subscribed === false) return null;
     if (plan === 'studio' && st.tier !== 'studio' && !st.is_admin) return null;
     return st;
   }, { label: 'payment', intervalMs: (res.pollSeconds || 5) * 1000 });
@@ -323,6 +337,7 @@ async function cmdStatus() {
   if (flags.json) { out(JSON.stringify({ ...s, version: packageVersion() })); return; }
   out(`Signed in: ${s.email}${s.name ? ` (${s.name})` : ''}`);
   out(`Plan: ${planName(s)}${s.status === 'trialing' ? ' (free trial)' : ''}${unlocked(s) ? ' · Connect on' : ' · Connect comes with Max or Studio (scorper pay)'}`);
+  if (cardless(s)) out(trialLine(s));
   const cfg = readConfig();
   if (cfg.default_account) out(`Default brand on this machine: ${cfg.default_account}`);
   out(accountsLine(s));
