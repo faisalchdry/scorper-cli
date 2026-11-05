@@ -436,7 +436,10 @@ async function cmdUpload() {
   out('Use this URL with the posting tools (scorper tool) or /api/schedule.');
 }
 
-const ACCOUNT_AWARE = /^scorper_(post_now|schedule_post|calendar|dm_status|list_dm_automations|create_dm_automation|pause_dm_automation|delete_dm_automation)$/;
+// Tools that act on ONE brand's account, so the CLI can fill in the user's
+// default handle when they have set one. Keep in step with the tool registry:
+// id-based actions (cancel/edit/post_now_by_id) are NOT account-aware.
+const ACCOUNT_AWARE = /^scorper_(post_now|schedule_post|calendar|analytics|tiktok_settings|list_posts|post_metrics|list_comments|reply_to_comment|hide_comment|delete_comment|list_conversations|send_dm|dm_status|list_dm_automations|create_dm_automation|pause_dm_automation|delete_dm_automation)$/;
 
 function defaultAccountArgs() {
   const { default_account } = readConfig();

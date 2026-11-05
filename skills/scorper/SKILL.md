@@ -5,9 +5,14 @@ description: Scorper Connect account setup and management. Use when the person m
 
 # Scorper Connect
 
-Scorper posts to the person's socials straight from here: Instagram,
-TikTok, LinkedIn, X and YouTube. It also runs comment-to-DM automations on
-Instagram, and has carousel and video tools built in. The CLI is installed at:
+Scorper is the connection between this terminal and the person's social
+accounts: Instagram, TikTok, LinkedIn, X and YouTube. Posting and scheduling,
+reading their comments and DMs, comment-to-DM automations, and carousel and
+video tools built in.
+
+Once they are connected, the connection is theirs: they can have whatever
+scheduler, approval flow or automation they want built on top of it (the
+scorper-dashboard skill does that). The CLI is installed at:
 {{SCORPER_CLI}}
 
 Check where things stand first:
@@ -77,9 +82,12 @@ The beats, with example lines (use these or your own words in this spirit):
 7. Wrap up warm, with their options in your own words:
    - "post this to my Instagram" just works from now on (scorper-posting
      skill), and so does "add a DM automation to that post"
-   - they can schedule, read their calendar, upload local photos and videos
-   - they can have their own control panel built on localhost
-     (scorper-dashboard skill)
+   - they can schedule, read their calendar, cancel or move what's queued,
+     upload local photos and videos
+   - they can read and reply to their Instagram comments and DMs from here
+   - they can have whatever they want built on top of the connection: their
+     own dashboard, a cron that posts by itself, a Telegram approval flow,
+     custom DM logic (scorper-dashboard skill)
    - their dashboard is at dashboard.scorper.ai, "Email me a code" on the
      login page gets them in without a password
    - or just come back whenever, you're always listening for Scorper stuff.
