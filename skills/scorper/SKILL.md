@@ -51,16 +51,18 @@ The beats, with example lines (use these or your own words in this spirit):
    warm and short: "You're on a 7-day free trial, no card needed 🎉". Then
    one beat on brands: the trial covers one brand account (all its socials).
    If they run more than one brand, e.g. two Instagram accounts, they need
-   Studio, which has no free trial and bills today (read the price from the
-   login output or status `plans`, never from memory). Give them the
-   choice, no pressure: keep the free trial and carry on (the default), or
-   start Studio now: `{{SCORPER_CLI}} pay --plan studio --interval <month|year>`
+   Studio (3 brands) or Agency (10 brands), which have no free trial and
+   bill today (read the prices from the login output or status `plans`,
+   never from memory). Give them the choice, no pressure: keep the free
+   trial and carry on (the default), or start one now:
+   `{{SCORPER_CLI}} pay --plan <studio|agency> --interval <month|year>`
    ("Checkout's open in your browser, let me know once you've paid and I'll
    confirm it", the command waits and verifies by itself).
    Accounts that already had a trial and have no plan: the login output
-   lists the plans instead. Present Max and Studio short and clear, monthly
-   first, yearly saves 30%, both bill today, then `{{SCORPER_CLI}} pay
-   --plan <max|studio> --interval <month|year>`. If it says it opened the
+   lists the plans instead. Present them short and clear from `plans`
+   (Pro is Instagram only, Max is every social, Studio 3 brands, Agency 10),
+   monthly first, yearly saves 30%, all bill today, then `{{SCORPER_CLI}} pay
+   --plan <pro|max|studio|agency> --interval <month|year>`. If it says it opened the
    dashboard instead, they already pay for a plan and are switching, that
    page handles it with proration.
 5. Socials. Ask which platforms they want to post to. Then: "Quick tip
@@ -103,9 +105,12 @@ approving this terminal on the Scorper website instead.
 - `{{SCORPER_CLI}} status` shows plan, connected accounts, brands.
 - Posting, scheduling and DM automations: use the scorper-posting skill.
 - Custom dashboard / their own tools: use the scorper-dashboard skill.
-- Brands: Max has 1 brand account, Studio has 3 (extra brands are a paid
-  add-on in the dashboard, Settings, Brands). Each brand holds its own
-  socials. Open the dashboard for them to add one, then
+- Plans and platforms: Pro posts to Instagram only (status shows
+  `connect_platforms: ["instagram"]`), Max, Studio and Agency post to every
+  social. Never promise a platform the plan does not have.
+- Brands: Pro and Max have 1 brand account, Studio has 3, Agency has 10.
+  Those are the caps, extra brands are not sold; more brands means the next
+  plan up. Each brand holds its own socials. Open the dashboard for them to add one, then
   `{{SCORPER_CLI}} connect` once it exists.
 - One brand: never ask which account. Several: work it out from what they
   say (the @handle or brand name) and the status list; ask only if it's
@@ -129,8 +134,8 @@ sign-in, or on the website).
   days left on your free trial, say subscribe whenever you want to keep
   posting after it". Never nag, never interrupt a task for it.
 - They say "subscribe" (or want to keep going, add a card, upgrade): read
-  the plans from `status --json` (never from memory), ask Max or Studio and
-  monthly or yearly, then `{{SCORPER_CLI}} pay --plan <max|studio> --interval <month|year>`.
+  the plans from `status --json` (never from memory), ask which plan and
+  monthly or yearly, then `{{SCORPER_CLI}} pay --plan <pro|max|studio|agency> --interval <month|year>`.
   It bills today and the plan starts straight away (no second free week).
   "Checkout's open in your browser, let me know once you've paid and I'll
   confirm it." The command waits and verifies by itself; once it says

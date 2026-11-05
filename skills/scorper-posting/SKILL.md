@@ -98,6 +98,13 @@ and stating them beats trying and failing:
   Posting works (text, images, multi-image, PDF documents).
 - **TikTok and X** expose no comments or DMs to Scorper.
 - **Instagram allows 50 published posts per account per 24 hours.**
+
+One Scorper plan rule sits next to these: **Pro posts to Instagram only.**
+`status --json` shows it as `connect_platforms: ["instagram"]`. If a Pro
+person asks for TikTok, LinkedIn, X or YouTube, the post comes back "Not
+posted" naming Max. Tell them once, plainly, and offer either to post the
+Instagram part now or to upgrade (`{{SCORPER_CLI}} pay --plan max --interval
+<month|year>`, price from status `plans`). Never retry the blocked platform.
 - Deleting a comment is permanent on Instagram's side. Hiding it is not, so
   offer hiding first unless they clearly want it gone.
 - Instagram's API cannot delete a published post. That has to be done in the
@@ -121,7 +128,7 @@ and stating them beats trying and failing:
 ## Comment-to-DM automations (Instagram)
 
 Someone comments a trigger word (like GUIDE) on a post and automatically gets
-a DM with a message and a link. ManyChat-style, included in Max and Studio.
+a DM with a message and a link. ManyChat-style, included in every plan.
 Needs a one-time second Instagram approval: `scorper_dm_status` says whether it
 is connected, and `{{SCORPER_CLI}} connect --dm` opens it (right Instagram
 account logged in first).

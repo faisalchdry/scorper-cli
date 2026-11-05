@@ -42,6 +42,17 @@ const isTTY = () => Boolean(process.stdin.isTTY && process.stdout.isTTY);
 // Connect unlocked? Servers since the 2026-10-23 pivot send `connect`;
 // older ones only `studio` (same meaning).
 const unlocked = (s) => Boolean(s.connect ?? s.studio);
+// Pro holds Connect for Instagram only (2026-11-05). Servers since then send
+// connect_platforms; older ones never do, which reads as "every platform".
+const limitedTo = (s) =>
+  unlocked(s) && !s.is_admin && Array.isArray(s.connect_platforms) && s.connect_platforms.length > 0 && s.connect_platforms.length < 5
+    ? s.connect_platforms
+    : null;
+const connectOn = (s) => (limitedTo(s) ? `Connect is on for ${limitedTo(s).map((p) => (p === 'instagram' ? 'Instagram' : p)).join(', ')}` : 'Connect is on');
+// Plan ladder for "already have it" checks after paying.
+const PLAN_RANK = { pro: 1, max: 2, studio: 3, agency: 4 };
+const PLAN_NAMES = { pro: 'Pro', max: 'Max', studio: 'Studio', agency: 'Agency' };
+const PLAN_FLAG = 'pro|max|studio|agency';
 // "trial" + incomplete = signed up, no plan picked yet.
 // Card-less trial (web signups since 2026-10-27): Connect is on but nothing
 // is paid yet. `subscribed` (servers since then) separates the two; older
@@ -50,8 +61,8 @@ const cardless = (s) => Boolean(s.trial && s.trial.cardless);
 const trialLine = (s) => {
   if (!cardless(s)) return '';
   const d = s.trial.days_left;
-  if (d === 0) return 'Free trial ended, no card on file. Posting is paused until you subscribe: scorper pay --plan max|studio --interval month|year';
-  return `Free trial, no card on file: ${d === 1 ? 'last day today' : `${d} days left`}. To keep posting after it, subscribe: scorper pay --plan max|studio --interval month|year`;
+  if (d === 0) return `Free trial ended, no card on file. Posting is paused until you subscribe: scorper pay --plan ${PLAN_FLAG} --interval month|year`;
+  return `Free trial, no card on file: ${d === 1 ? 'last day today' : `${d} days left`}. To keep posting after it, subscribe: scorper pay --plan ${PLAN_FLAG} --interval month|year`;
 };
 const planName = (s) => (s.status === 'incomplete' || (s.tier === 'trial' && !unlocked(s)) ? 'no plan yet' : s.tier);
 
@@ -151,22 +162,25 @@ function afterLoginLines(s, isNew, trialStarted = false) {
   out(`\n${isNew ? 'Account created' : 'Signed in'}: ${s.email}${s.name ? ` (${s.name})` : ''}.`);
   if (trialStarted && cardless(s)) {
     // Every new account starts a 7-day Max trial at sign-in, no card
-    // (2026-10-27). One beat for the agent: say so, and offer Studio for
-    // anyone running several brands (paid from day one, no trial).
+    // (2026-10-27). One beat for the agent: say so, and offer Studio (3
+    // brands) or Agency (10) for anyone running several brands (both paid
+    // from day one, no trial).
     const studio = Array.isArray(s.plans) ? s.plans.find((p) => p.plan === 'studio') : null;
+    const agency = Array.isArray(s.plans) ? s.plans.find((p) => p.plan === 'agency') : null;
     out(`Free trial started: 7 days of Max, no card needed (until ${String(s.trial.ends_at).slice(0, 10)}). 1 brand account, every social. Connect is on.`);
-    out(`AGENT NOTE: tell them warmly they're on a 7-day free trial, no card needed. Then add, briefly: the trial covers one brand; if they run more than one brand (say two Instagram accounts) they need Studio${studio ? ` (${studio.monthly} or ${studio.yearly}, ${studio.summary})` : ''}, which has no free trial and bills today. Give them the choice: keep the free trial (default, go straight to connecting socials) or start Studio now with scorper pay --plan studio --interval <month|year>. Don't push it, one mention.`);
+    out(`AGENT NOTE: tell them warmly they're on a 7-day free trial, no card needed. Then add, briefly: the trial covers one brand; if they run more than one brand (say two Instagram accounts) they need Studio${studio ? ` (${studio.monthly} or ${studio.yearly}, ${studio.summary})` : ''}${agency ? `, or Agency for up to 10 brands (${agency.monthly} or ${agency.yearly})` : ''}, which have no free trial and bill today. Give them the choice: keep the free trial (default, go straight to connecting socials) or start one now with scorper pay --plan studio|agency --interval <month|year>. Don't push it, one mention.`);
     out(accountsLine(s));
     return;
   }
   if (unlocked(s)) {
-    out(s.status === 'trialing' && s.trial_end ? `Plan: ${s.tier}, free trial until ${String(s.trial_end).slice(0, 10)}${cardless(s) ? ' (no card on file)' : ''}. Connect is on.` : `Plan: ${s.tier}. Connect is on.`);
+    out(s.status === 'trialing' && s.trial_end ? `Plan: ${s.tier}, free trial until ${String(s.trial_end).slice(0, 10)}${cardless(s) ? ' (no card on file)' : ''}. ${connectOn(s)}.` : `Plan: ${s.tier}. ${connectOn(s)}.`);
+    if (limitedTo(s)) out('AGENT NOTE: this plan (Pro) posts to Instagram only through Scorper. Other socials (TikTok, LinkedIn, X, YouTube) come with Max; if they ask for one, read the price from status plans and offer scorper pay --plan max --interval <month|year>. One mention, no push.');
     out(accountsLine(s));
   } else {
-    out('Posting from here comes with Max or Studio. Plans:');
+    out('Posting from here comes with every Scorper plan. Plans:');
     const pl = plansLine(s);
     if (pl) out(pl);
-    out('Next: scorper pay --plan max|studio --interval month|year');
+    out(`Next: scorper pay --plan ${PLAN_FLAG} --interval month|year`);
   }
 }
 
@@ -234,19 +248,19 @@ async function cmdLogin() {
 async function cmdPay() {
   const plan = flags.plan ? String(flags.plan).toLowerCase() : '';
   const interval = flags.interval ? String(flags.interval).toLowerCase().replace(/ly$/, '').replace(/^annual$/, 'year').replace(/^month$/, 'month') : 'month';
-  if (plan && plan !== 'max' && plan !== 'studio') { out('Plans: max or studio.'); process.exitCode = 1; return; }
+  if (plan && !PLAN_RANK[plan]) { out('Plans: pro, max, studio or agency.'); process.exitCode = 1; return; }
   if (interval !== 'month' && interval !== 'year') { out('Interval: month or year.'); process.exitCode = 1; return; }
   if (!plan) {
     const s = await fetchStatus();
-    if (unlocked(s) && !cardless(s)) { out(`You're on ${s.tier}, Connect is already on. Nothing to pay.`); return; }
+    if (unlocked(s) && !cardless(s) && !limitedTo(s)) { out(`You're on ${s.tier}, Connect is already on. Nothing to pay.`); return; }
     if (cardless(s)) out(trialLine(s));
     out('Pick a plan first:');
     out(plansLine(s));
-    out('Then: scorper pay --plan max|studio --interval month|year');
+    out(`Then: scorper pay --plan ${PLAN_FLAG} --interval month|year`);
     return;
   }
   const res = await api('/api/cli/checkout', { method: 'POST', body: { plan, interval } });
-  if (res.alreadyEntitled || res.alreadyStudio) { out(`You already have ${plan === 'studio' ? 'Studio' : 'that'}, Connect is already on. Nothing to pay.`); return; }
+  if (res.alreadyEntitled || res.alreadyStudio) { out(`You already have ${PLAN_NAMES[plan] || 'that'} or higher, nothing to pay.`); return; }
   const opened = openUrl(res.url);
   if (res.dashboard) {
     out(opened ? 'Opened your Scorper dashboard to switch plans (you already pay, so it is prorated there). If nothing opened, use this link:' : 'Open this link to switch plans in your Scorper dashboard:');
@@ -263,10 +277,12 @@ async function cmdPay() {
     if (!unlocked(st)) return null;
     // Card-less trials already have Connect on: wait for the payment itself.
     if (cardless(st) || st.subscribed === false) return null;
-    if (plan === 'studio' && st.tier !== 'studio' && !st.is_admin) return null;
+    // Pro holds Connect too, so "unlocked" alone no longer proves the new
+    // plan landed: wait until the tier is at least the one they paid for.
+    if (!st.is_admin && (PLAN_RANK[st.tier] || 0) < PLAN_RANK[plan]) return null;
     return st;
   }, { label: 'payment', intervalMs: (res.pollSeconds || 5) * 1000 });
-  out(`\nVerified, you're on ${s.tier}${s.status === 'trialing' ? ' (free trial)' : ''}. Connect is on, you can post from here now.`);
+  out(`\nVerified, you're on ${s.tier}${s.status === 'trialing' ? ' (free trial)' : ''}. ${connectOn(s)}, you can post from here now.`);
 }
 
 async function cmdConnectDm() {
@@ -346,7 +362,7 @@ async function cmdStatus() {
   const s = await fetchStatus();
   if (flags.json) { out(JSON.stringify({ ...s, version: packageVersion() })); return; }
   out(`Signed in: ${s.email}${s.name ? ` (${s.name})` : ''}`);
-  out(`Plan: ${planName(s)}${s.status === 'trialing' ? ' (free trial)' : ''}${unlocked(s) ? ' · Connect on' : ' · Connect comes with Max or Studio (scorper pay)'}`);
+  out(`Plan: ${planName(s)}${s.status === 'trialing' ? ' (free trial)' : ''}${unlocked(s) ? (limitedTo(s) ? ' · Connect on for Instagram (Max adds every other social)' : ' · Connect on') : ' · Connect comes with every plan (scorper pay)'}`);
   if (cardless(s)) out(trialLine(s));
   const cfg = readConfig();
   if (cfg.default_account) out(`Default brand on this machine: ${cfg.default_account}`);
@@ -506,7 +522,7 @@ const HELP = `scorper ${packageVersion()}: Scorper Connect inside your AI agent 
                              sign in or create your account with an emailed code
   scorper login --browser    sign in by approving this terminal in your browser
   scorper status [--json]    plan, connected socials, brands
-  scorper pay --plan max|studio --interval month|year
+  scorper pay --plan pro|max|studio|agency --interval month|year
                              open checkout for that plan, wait + verify
   scorper connect            open the dashboard to connect a social, wait for it
   scorper connect --dm [--account @handle]
