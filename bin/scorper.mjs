@@ -7,7 +7,7 @@ import { basename, resolve, join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { api, API_BASE } from '../lib/api.mjs';
-import { readConfig, writeConfig, ensureInstallId } from '../lib/config.mjs';
+import { readConfig, writeConfig, ensureInstallId, SCORPER_DIR } from '../lib/config.mjs';
 import { installAll, installCliDeps, packageVersion } from '../lib/install.mjs';
 import { uninstallAll } from '../lib/uninstall.mjs';
 import { detectAgents } from '../lib/detect.mjs';
@@ -117,6 +117,31 @@ function accountsLine(s) {
 
 async function cmdInit() {
   const dryRun = Boolean(flags['dry-run']);
+  // Say what we are about to touch BEFORE touching it. A sandboxed agent
+  // (Codex cloud, a locked-down IDE) has to approve these writes, and until
+  // 2026-11-06 it had nothing to go on: npm downloads silently for a minute
+  // and then the installer starts writing executables and editing hook
+  // settings with no stated intent. Now the plan is printed first, computed
+  // from the real action list so it can never drift from what happens.
+  if (!dryRun) {
+    const plan = installAll({ dryRun: true, log: () => {} });
+    const skillDirs = [...new Set(plan.actions.filter(([k]) => k === 'skill').map(([, w]) => dirname(w)))];
+    const settingsFiles = plan.actions.filter(([k]) => k === 'hooks').map(([, w]) => w);
+    out('Setting up Scorper Connect, the link between your AI and your social accounts.');
+    out('Before anything is written, here is everything this will do:');
+    out(`  1. ${SCORPER_DIR}`);
+    out('     the Scorper CLI and, after you sign in, your key. Stays on this machine.');
+    if (skillDirs.length) {
+      out(`  2. ${skillDirs.join('\n     ')}`);
+      out('     the Scorper skills, so your agent knows the commands.');
+    }
+    if (settingsFiles.length) {
+      out(`  3. ${settingsFiles.join('\n     ')}`);
+      out('     adds one hook. Your existing settings are merged, not replaced, and backed up first.');
+    }
+    out('Nothing outside those paths is touched. Undo it all with: npx scorper@latest uninstall');
+    out('');
+  }
   const result = installAll({ dryRun });
   if (dryRun) return;
   const found = result.agents.map((a) => a.name).join(', ') || 'none detected';
