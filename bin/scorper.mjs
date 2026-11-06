@@ -10,7 +10,7 @@ import { api, API_BASE } from '../lib/api.mjs';
 import { readConfig, writeConfig, ensureInstallId, SCORPER_DIR } from '../lib/config.mjs';
 import { installAll, installCliDeps, packageVersion } from '../lib/install.mjs';
 import { uninstallAll } from '../lib/uninstall.mjs';
-import { detectAgents } from '../lib/detect.mjs';
+import { detectAgents, detectEphemeral } from '../lib/detect.mjs';
 import { openUrl } from '../lib/open.mjs';
 
 const [, , command = 'help', ...rest] = process.argv;
@@ -153,6 +153,32 @@ async function cmdInit() {
   if (result.agents.some((a) => a.id === 'codex')) {
     out('Codex users: open Codex and run /hooks once to switch Scorper\'s hooks on.');
   }
+  // Cloud workspace: the install just succeeded but will not survive, so say
+  // so plainly and point at the thing that does. Added 2026-11-06 after the
+  // command was pasted into Codex cloud and there was nothing to explain why
+  // it would not stick.
+  const env = detectEphemeral();
+  if (env.ephemeral) {
+    out('');
+    out('BEFORE YOU GO FURTHER: this looks like a cloud workspace rather than your own computer.');
+    out(`(What gave it away: ${env.reason}.)`);
+    out('');
+    out('What you just installed is the Scorper command line tool. It lives on the machine');
+    out('it is installed on, which is perfect for Claude Code or Codex running in your own');
+    out('terminal, desktop app or code editor. A cloud workspace is handed back when the');
+    out('task finishes, so this install and your sign-in go with it and you would start');
+    out('again from scratch next time.');
+    out('');
+    out('There is a version built for exactly this. The Scorper connector runs on our');
+    out('servers, so there is nothing to install and nothing to lose:');
+    out('');
+    out(`    ${API_BASE}/api/mcp`);
+    out('');
+    out('You add it once under Connectors in your Claude or ChatGPT settings, sign in, and');
+    out('it works every time you use that account, on the web or anywhere else.');
+    out('');
+    out('AGENT NOTE: you are in a cloud workspace, so the CLI install above is temporary and will be lost when this task ends. Tell the person that in plain words, no jargon, and OFFER: "want me to walk you through adding the Scorper connector instead? It takes about a minute and you only do it once." If they say yes, walk them through it step by step in their own app settings (Claude: Settings, Connectors, Add custom connector, paste the URL above, sign in when it asks. ChatGPT: Settings, Connectors, add it the same way). You CANNOT do this part for them, it is in their account settings, so guide, confirm each step, and do not claim you have done it. If they are also using Claude Code or Codex in a real terminal somewhere, mention they can run this same init there and get the full set of commands.');
+  }
   ensureInstallId();
   const config = readConfig();
   if (config.token) {
@@ -168,7 +194,14 @@ async function cmdInit() {
   if (isTTY()) {
     out('\nNext: scorper login, it emails you a 6-digit code (no passwords).');
   } else {
-    // Launched by an agent: hand the conversation to it.
+    // Launched by an agent: hand the conversation to it. In a cloud
+    // workspace the connector note above already told the agent what to do,
+    // and a CLI sign-in there mints a key that dies with the container, so
+    // do not also push it down the login path.
+    if (env.ephemeral) {
+      out('AGENT NOTE: do NOT start the CLI sign-in flow here. Follow the connector note above instead. Only sign in with the CLI if the person explicitly says they just want to try it for this one session.');
+      return;
+    }
     out('AGENT NOTE: Scorper Connect is installed. Now get the person signed in, following the scorper skill, and keep it WARM and conversational, wave emoji hello, excited to have them, short messages, founder-welcoming energy, never formal. Ask for their email only (never "do you have an account", the code decides that), run scorper login --email <their email>, ask for the 6-digit code from their inbox, then scorper login --email <email> --code <code>. If it says NEW ACCOUNT, ask their first name and rerun with --name. Known accounts come back with their name, greet them by it.');
   }
 }
