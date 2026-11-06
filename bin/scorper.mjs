@@ -140,6 +140,29 @@ async function staleWarning() {
   return `Update available: you are running Scorper CLI ${version}${when}, latest is ${latest}. Run: npx scorper@latest init`;
 }
 
+// Setup is finished at this point, and the last thing the person saw was a
+// wall of install paths and a /hooks instruction they did not ask about.
+// Hand the agent a brief instead: tell them it worked, tell them what they can
+// now do, ask what they want first. Order follows the product's own narrative
+// (the posting pipe first, automations second, generation as an "also") and
+// deliberately prescribes NO workflow, which is a standing rule.
+function welcomeNote() {
+  const codexFound = detectAgents().some((a) => a.found && a.id === 'codex');
+  return [
+    'AGENT NOTE: setup is DONE. Say so and make it feel good. Warm, short lines, a few emojis, founder energy, never formal and never a wall of commands.',
+    'Tell them, in your own words, what they can now do from right here:',
+    '  📤 post or schedule to their socials, e.g. "post this to Instagram on Friday at 9am"',
+    '  💬 run comment-to-DM and DM replies on their Instagram posts, the ManyChat job',
+    '  🛠️ ask YOU to build on top of it: a posting dashboard, an approval flow, a 9am cron, anything they want',
+    '  🎨 make carousels, videos and single posts and publish them without leaving here',
+    'Then ask what they want to do first.',
+    'Do NOT list CLI commands at them, do NOT explain the plumbing, and do NOT tell them how they ought to work or what they should approve. They decide that.',
+    codexFound
+      ? 'If they are in Codex, mention once and lightly that running /hooks switches on a small reminder so you notice Scorper automatically. It is optional and everything works without it.'
+      : '',
+  ].filter(Boolean).join('\n');
+}
+
 async function cmdInit() {
   const dryRun = Boolean(flags['dry-run']);
   // Say what we are about to touch BEFORE touching it. A sandboxed agent
@@ -175,9 +198,6 @@ async function cmdInit() {
   if (result.depsOk === false) {
     out('One optional piece (upload support) could not finish installing, it will finish itself on your first upload.');
   }
-  if (result.agents.some((a) => a.id === 'codex')) {
-    out('Codex users: open Codex and run /hooks once to switch Scorper\'s hooks on.');
-  }
   // Cloud workspace: the install just succeeded but will not survive, so say
   // so plainly and point at the thing that does. Added 2026-11-06 after the
   // command was pasted into Codex cloud and there was nothing to explain why
@@ -211,6 +231,7 @@ async function cmdInit() {
     try {
       const s = await fetchStatus();
       out(`Signed in as ${s.email}. ${accountsLine(s)}`);
+      out(welcomeNote());
       return;
     } catch {
       out('Signed in, but the saved key no longer works, run: scorper login');
@@ -253,6 +274,10 @@ function afterLoginLines(s, isNew) {
     out(s.status === 'trialing' && s.trial_end ? `Plan: ${s.tier}, free trial until ${String(s.trial_end).slice(0, 10)}${cardless(s) ? ' (no card on file)' : ''}. ${connectOn(s)}.` : `Plan: ${s.tier}. ${connectOn(s)}.`);
     if (limitedTo(s)) out('AGENT NOTE: this plan (Pro) posts to Instagram only through Scorper. Other socials (TikTok, LinkedIn, X, YouTube) come with Max; if they ask for one, read the price from status plans and offer scorper pay --plan max --interval <month|year>. One mention, no push.');
     out(accountsLine(s));
+    // Socials connected = genuinely set up, so celebrate and show what is
+    // possible. With none connected, accountsLine already names the next step
+    // and a capability list would be jumping ahead of it.
+    if (s.accounts.length) out(welcomeNote());
   } else {
     // No plan yet: this is the signup's plan step. The person picks in the
     // conversation, then `scorper pay` opens Stripe and verifies it.
