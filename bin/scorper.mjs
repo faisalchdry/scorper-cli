@@ -7,7 +7,7 @@ import { basename, resolve, join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { api, API_BASE } from '../lib/api.mjs';
-import { readConfig, writeConfig, ensureInstallId, SCORPER_DIR } from '../lib/config.mjs';
+import { readConfig, writeConfig, ensureInstallId, SCORPER_DIR, installInfo, stampInstall, readUpdateCheck, writeUpdateCheck } from '../lib/config.mjs';
 import { installAll, installCliDeps, packageVersion } from '../lib/install.mjs';
 import { uninstallAll } from '../lib/uninstall.mjs';
 import { detectAgents, detectEphemeral } from '../lib/detect.mjs';
@@ -115,6 +115,31 @@ function accountsLine(s) {
   return 'Connected: ' + s.accounts.map((a) => `${a.handle} (${a.platform}${a.workspace !== 'default' ? `, ${a.workspace}` : ''})`).join(', ');
 }
 
+// The copy under ~/.scorper/cli is what agents actually run, and nothing ever
+// told anyone it had gone stale. Checked against npm at most once a day, with
+// a short timeout, and any failure is swallowed: this is a nicety, never a
+// reason for a command to be slow or to fail.
+async function staleWarning() {
+  const { version, installedAt } = installInfo();
+  if (!version) return null;
+  let latest = readUpdateCheck();
+  if (!latest) {
+    try {
+      const r = await fetch('https://registry.npmjs.org/scorper/latest', {
+        signal: AbortSignal.timeout(3000),
+      });
+      if (!r.ok) return null;
+      latest = (await r.json()).version;
+      if (latest) writeUpdateCheck(latest);
+    } catch {
+      return null; // offline or sandboxed: networkHelp covers that case
+    }
+  }
+  if (!latest || latest === version) return null;
+  const when = installedAt ? `, installed ${new Date(installedAt).toISOString().slice(0, 10)}` : '';
+  return `Update available: you are running Scorper CLI ${version}${when}, latest is ${latest}. Run: npx scorper@latest init`;
+}
+
 async function cmdInit() {
   const dryRun = Boolean(flags['dry-run']);
   // Say what we are about to touch BEFORE touching it. A sandboxed agent
@@ -180,6 +205,7 @@ async function cmdInit() {
     out('AGENT NOTE: you are in a cloud workspace, so the CLI install above is temporary and will be lost when this task ends. Tell the person that in plain words, no jargon, and OFFER: "want me to walk you through adding the Scorper connector instead? It takes about a minute and you only do it once." If they say yes, walk them through it step by step in their own app settings (Claude: Settings, Connectors, Add custom connector, paste the URL above, sign in when it asks. ChatGPT: Settings, Connectors, add it the same way). You CANNOT do this part for them, it is in their account settings, so guide, confirm each step, and do not claim you have done it. If they are also using Claude Code or Codex in a real terminal somewhere, mention they can run this same init there and get the full set of commands.');
   }
   ensureInstallId();
+  stampInstall(packageVersion());
   const config = readConfig();
   if (config.token) {
     try {
@@ -411,6 +437,8 @@ async function cmdConnect() {
 }
 
 async function cmdStatus() {
+  const stale = await staleWarning();
+  if (stale) out(stale);
   const config = readConfig();
   if (!config.token) {
     const payload = { installed: true, signed_in: false, version: packageVersion() };
