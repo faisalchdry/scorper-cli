@@ -157,8 +157,11 @@ function welcomeNote() {
     '  🎨 make carousels, videos and single posts and publish them without leaving here',
     'Then ask what they want to do first.',
     'Do NOT list CLI commands at them, do NOT explain the plumbing, and do NOT tell them how they ought to work or what they should approve. They decide that.',
+    // Worth a proper line, not a footnote: without the hook the agent can
+    // simply fail to think of Scorper when the person says "post this", and
+    // they would never know why. Explain the BENEFIT, never the plumbing.
     codexFound
-      ? 'If they are in Codex, mention once and lightly that running /hooks switches on a small reminder so you notice Scorper automatically. It is optional and everything works without it.'
+      ? 'THEN tell them one thing worth doing, in plain words and as a suggestion, never a demand: running /hooks in Codex switches on a small reminder so you spot on your own when they are talking about posting, and they never have to tell you Scorper is here. Say it takes a second. Do not call it a hook, do not explain how it works, and do not block anything on it: everything above already works without it.'
       : '',
   ].filter(Boolean).join('\n');
 }
