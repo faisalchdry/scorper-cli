@@ -1,6 +1,6 @@
 ---
 name: scorper
-description: Scorper Connect account setup and management. Use when the person mentions Scorper, wants to post or schedule to their social accounts from here, asks to sign in or check their Scorper connection, or when the Scorper status note says this machine is not signed in yet. Covers the email-code sign-in (new or existing account), picking a plan, connecting socials and the comment-to-DM connection.
+description: Scorper Connect account setup and management. Use when the person mentions Scorper, wants to post or schedule to their social accounts from here, asks to sign in or check their Scorper connection, has questions about Scorper plans or pricing, or when the Scorper status note says this machine is not signed in yet. Covers the email-code sign-in (new or existing account), picking a plan and starting the free trial through checkout, connecting socials and the comment-to-DM connection.
 ---
 
 # Scorper Connect
@@ -46,25 +46,35 @@ The beats, with example lines (use these or your own words in this spirit):
      then rerun with `--name "<name>"`.
    - Wrong or expired code: say so plainly, offer to send a new one (rerun
      step 2, there is a 30 second wait between codes).
-4. Free trial (new accounts). Signing in starts a 7-day free trial of Max,
-   no card needed, the login output says "Free trial started". Tell them,
-   warm and short: "You're on a 7-day free trial, no card needed 🎉". Then
-   one beat on brands: the trial covers one brand account (all its socials).
-   If they run more than one brand, e.g. two Instagram accounts, they need
-   Studio (3 brands) or Agency (10 brands), which have no free trial and
-   bill today (read the prices from the login output or status `plans`,
-   never from memory). Give them the choice, no pressure: keep the free
-   trial and carry on (the default), or start one now:
-   `{{SCORPER_CLI}} pay --plan <studio|agency> --interval <month|year>`
-   ("Checkout's open in your browser, let me know once you've paid and I'll
-   confirm it", the command waits and verifies by itself).
-   Accounts that already had a trial and have no plan: the login output
-   lists the plans instead. Present them short and clear from `plans`
-   (Pro is Instagram only, Max is every social, Studio 3 brands, Agency 10),
-   monthly first, yearly saves 30%, all bill today, then `{{SCORPER_CLI}} pay
-   --plan <pro|max|studio|agency> --interval <month|year>`. If it says it opened the
-   dashboard instead, they already pay for a plan and are switching, that
-   page handles it with proration.
+4. Pick a plan. A new account has no plan yet, and the login output lists
+   the plans (so does `status --json`, under `plans`). This step is part of
+   signing up, not an upsell, so keep it as warm and short as the rest.
+   - Show the four plans as a clear list, prices from the output, never from
+     memory: Pro is Instagram only (1 brand). Max is every social for 1
+     brand. Studio is 3 brands, good for someone running a personal and a
+     business account. Agency is 10 brands, for several brands or clients.
+     Monthly first, yearly is 30% off.
+   - The free trial: when the output says every plan starts with 7 days free
+     (`trial_offer` in `status --json`), say so plainly: a card is needed to
+     start it, nothing is charged today, and cancelling inside the 7 days
+     costs nothing. When it says the trial was already used, the plan bills
+     today. Never promise a trial the output does not offer.
+   - Questions about the plans: answer them, from the plan lines and the
+     facts in "Signed in already" below, before asking them to choose. If
+     you do not know, say so and point them to https://scorper.ai. One clear
+     answer, no pitch.
+   - Ask which plan, and monthly or yearly. Then:
+     `{{SCORPER_CLI}} pay --plan <pro|max|studio|agency> --interval <month|year>`
+     It opens Stripe Checkout in their browser, waits, and verifies the
+     payment itself. "Checkout's open in your browser. Pop your card in and
+     come back, I'll see it land." Once it prints Verified, confirm warmly
+     ("You're in, 7 days free 🎉" on a trial) and carry on.
+   - If they say they finished but it has not landed, run
+     `{{SCORPER_CLI}} status --json` and check `subscribed`.
+   - If it says it opened the dashboard instead, they already pay for a plan
+     and are switching, that page handles it with proration.
+   Do not connect socials before a plan is verified, the connection needs
+   one.
 5. Socials. Ask which platforms they want to post to. Then: "Quick tip
    before I open it: log into the right account for each platform in your
    browser first, it connects whichever account is logged in." On ready:
@@ -121,12 +131,13 @@ approving this terminal on the Scorper website instead.
 - New machine, same person: just sign in again with their email, nothing
   gets duplicated.
 
-## Free trial with no card
+## Accounts on an older trial with no card
 
-Every new account starts a 7-day free trial of Max with no card (here at
-sign-in, or on the website).
-`status --json` shows it as `trial.cardless: true` with `trial.days_left`
-(and the plain `status` output says "no card on file").
+For a short while new accounts started a 7-day trial with no card, and a
+few still get one from a reminder email. `status --json` shows these as
+`trial.cardless: true` with `trial.days_left` (the plain `status` output
+says "no card on file"). New signups do not get this: they pick a plan and
+start their trial through checkout (step 4 above).
 
 - Days 1 to 3: say nothing about billing.
 - From 4 days left: tool results carry a short Scorper trial note. Mention it

@@ -54,9 +54,10 @@ const PLAN_RANK = { pro: 1, max: 2, studio: 3, agency: 4 };
 const PLAN_NAMES = { pro: 'Pro', max: 'Max', studio: 'Studio', agency: 'Agency' };
 const PLAN_FLAG = 'pro|max|studio|agency';
 // "trial" + incomplete = signed up, no plan picked yet.
-// Card-less trial (web signups since 2026-10-27): Connect is on but nothing
-// is paid yet. `subscribed` (servers since then) separates the two; older
-// servers never send `trial`, so this stays false there.
+// Card-less trial: accounts created between 2026-10-27 and 2026-11-06 (and
+// rescue-email trials) have Connect on with nothing paid yet. `subscribed`
+// separates the two. New accounts never land here any more: since 0.3.3 every
+// plan starts with a 7-day CARD trial through `scorper pay` (trial_offer).
 const cardless = (s) => Boolean(s.trial && s.trial.cardless);
 const trialLine = (s) => {
   if (!cardless(s)) return '';
@@ -158,29 +159,27 @@ async function finishLogin(token) {
   return s;
 }
 
-function afterLoginLines(s, isNew, trialStarted = false) {
+// The 7-day card trial is on offer (servers since 2026-11-06 send
+// trial_offer while the account has no plan and never trialed).
+const trialOffer = (s) => Boolean(s.trial_offer);
+
+function afterLoginLines(s, isNew) {
   out(`\n${isNew ? 'Account created' : 'Signed in'}: ${s.email}${s.name ? ` (${s.name})` : ''}.`);
-  if (trialStarted && cardless(s)) {
-    // Every new account starts a 7-day Max trial at sign-in, no card
-    // (2026-10-27). One beat for the agent: say so, and offer Studio (3
-    // brands) or Agency (10) for anyone running several brands (both paid
-    // from day one, no trial).
-    const studio = Array.isArray(s.plans) ? s.plans.find((p) => p.plan === 'studio') : null;
-    const agency = Array.isArray(s.plans) ? s.plans.find((p) => p.plan === 'agency') : null;
-    out(`Free trial started: 7 days of Max, no card needed (until ${String(s.trial.ends_at).slice(0, 10)}). 1 brand account, every social. Connect is on.`);
-    out(`AGENT NOTE: tell them warmly they're on a 7-day free trial, no card needed. Then add, briefly: the trial covers one brand; if they run more than one brand (say two Instagram accounts) they need Studio${studio ? ` (${studio.monthly} or ${studio.yearly}, ${studio.summary})` : ''}${agency ? `, or Agency for up to 10 brands (${agency.monthly} or ${agency.yearly})` : ''}, which have no free trial and bill today. Give them the choice: keep the free trial (default, go straight to connecting socials) or start one now with scorper pay --plan studio|agency --interval <month|year>. Don't push it, one mention.`);
-    out(accountsLine(s));
-    return;
-  }
   if (unlocked(s)) {
     out(s.status === 'trialing' && s.trial_end ? `Plan: ${s.tier}, free trial until ${String(s.trial_end).slice(0, 10)}${cardless(s) ? ' (no card on file)' : ''}. ${connectOn(s)}.` : `Plan: ${s.tier}. ${connectOn(s)}.`);
     if (limitedTo(s)) out('AGENT NOTE: this plan (Pro) posts to Instagram only through Scorper. Other socials (TikTok, LinkedIn, X, YouTube) come with Max; if they ask for one, read the price from status plans and offer scorper pay --plan max --interval <month|year>. One mention, no push.');
     out(accountsLine(s));
   } else {
-    out('Posting from here comes with every Scorper plan. Plans:');
+    // No plan yet: this is the signup's plan step. The person picks in the
+    // conversation, then `scorper pay` opens Stripe and verifies it.
+    out('No plan on this account yet. Posting from here comes with every Scorper plan:');
     const pl = plansLine(s);
     if (pl) out(pl);
+    out(trialOffer(s)
+      ? 'Every plan starts with 7 days free. A card is needed to start, nothing is charged today, and cancelling inside the 7 days costs nothing.'
+      : 'This account has already had its free trial, so a plan bills today and starts straight away.');
     out(`Next: scorper pay --plan ${PLAN_FLAG} --interval month|year`);
+    out(`AGENT NOTE: this is the plan step of signing up, keep it warm and short. Show the four plans as a clear list using the lines above (never prices from memory): Pro is Instagram only; Max is every social for one brand; Studio is 3 brands, good for someone with a personal and a business account; Agency is 10 brands, for several brands or clients. Yearly is 30% off. ${trialOffer(s) ? 'Say every plan starts with a 7-day free trial, a card is needed to start it, and nothing is charged today.' : 'Say the plan bills today, the free trial was already used.'} If they have questions about the plans, answer them from the lines above before moving on; if the answer is not there, say so and point them to https://scorper.ai. Then ask which plan and whether monthly or yearly, and run: scorper pay --plan <${PLAN_FLAG}> --interval <month|year>. It opens Stripe Checkout in their browser, waits, and verifies the payment itself, so tell them to come back once the card is in. Only after it prints "Verified" move on to connecting socials.`);
   }
 }
 
@@ -242,7 +241,7 @@ async function cmdLogin() {
     name = await ask('Welcome to Scorper! Your first name: ');
     res = await verify(name);
   }
-  afterLoginLines(await finishLogin(res.token), Boolean(res.isNew), Boolean(res.trialStarted));
+  afterLoginLines(await finishLogin(res.token), Boolean(res.isNew));
 }
 
 async function cmdPay() {
@@ -256,6 +255,7 @@ async function cmdPay() {
     if (cardless(s)) out(trialLine(s));
     out('Pick a plan first:');
     out(plansLine(s));
+    if (trialOffer(s)) out('Every plan starts with 7 days free. A card is needed to start, nothing is charged today.');
     out(`Then: scorper pay --plan ${PLAN_FLAG} --interval month|year`);
     return;
   }
@@ -268,7 +268,7 @@ async function cmdPay() {
     out(opened ? 'Checkout opened in your browser. If nothing opened, use this link:' : 'Open this link in your browser to pay:');
   }
   out(`  ${res.url}`);
-  if (res.trial) out('Max monthly starts with 7 days free, card required, cancel any time in the week.');
+  if (res.trial) out(`${PLAN_NAMES[plan]} starts with 7 days free. A card is needed to start, nothing is charged today, and cancelling inside the 7 days costs nothing.`);
   else out('This bills today and your plan starts straight away.');
   if (flags['no-wait']) return;
   out('Waiting for it to land (I check every few seconds)…');
@@ -523,7 +523,8 @@ const HELP = `scorper ${packageVersion()}: Scorper Connect inside your AI agent 
   scorper login --browser    sign in by approving this terminal in your browser
   scorper status [--json]    plan, connected socials, brands
   scorper pay --plan pro|max|studio|agency --interval month|year
-                             open checkout for that plan, wait + verify
+                             open checkout for that plan (7 days free on a
+                             first plan, card needed), wait + verify
   scorper connect            open the dashboard to connect a social, wait for it
   scorper connect --dm [--account @handle]
                              approve comment-to-DM automations for Instagram
