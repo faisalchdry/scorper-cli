@@ -40,7 +40,9 @@ live list, since it grows:
   likes and comment counts, followers over time.
 - **Engagement**: read comments, reply publicly, hide or delete a comment,
   read DM threads, send a DM, and manage comment-to-DM automations.
-- **Generation**: Scorper carousels in their saved style.
+- **Generation**: Scorper carousels in their saved style (tweet-style by
+  default, creative image templates on request), plus no-login preview links
+  for anything before it is posted.
 
 ## Platform limits worth designing around
 

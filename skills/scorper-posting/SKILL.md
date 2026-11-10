@@ -40,7 +40,8 @@ are not on this account yet, and the automations below still are.
   `scorper_delete_dm_automation`
 
 **Generation**
-- `scorper_generate_carousel`, `scorper_check_credits`
+- `scorper_generate_carousel` (tweet-style by default, or `template` for an
+  image-led creative template), `scorper_preview_link`, `scorper_check_credits`
 
 ## The rules that matter
 
@@ -122,8 +123,14 @@ Instagram part now or to upgrade (`{{SCORPER_CLI}} pay --plan max --interval
 - "What did my last post do?" → list_posts or post_metrics.
 - "Reply to everyone asking about price" → list_comments → draft replies →
   show them → reply_to_comment per comment.
-- "Make a carousel about X and post it" → generate_carousel → show them →
-  confirm → post_now.
+- "Make a carousel about X and post it" → generate_carousel → give them the
+  preview link it returns (or the dashboard link to edit it) → post_now.
+- "Make it more visual / with images" → generate_carousel with a `template`
+  (the tool lists them). Tweet-style is the default on purpose: it is the
+  format Scorper is known for. Only switch when they ask.
+- "Where is it? / let me see it first" → the carousel sits under History,
+  Drafts on dashboard.scorper.ai, and `scorper_preview_link` makes a no-login
+  link for any carousel or set of images.
 
 ## Comment-to-DM automations (Instagram)
 
